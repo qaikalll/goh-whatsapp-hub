@@ -162,7 +162,7 @@ renderList=function(){
     if(filter==="unread" && !c.unread)
       return false;
 
-    if(filter==="mine" && c.assigned!=="Admin")
+    if(filter==="mine" && c.assigned!==(window.CURRENT_STAFF||"Admin"))
       return false;
 
     if(filter==="unassigned" && c.assigned!=="Unassigned")
