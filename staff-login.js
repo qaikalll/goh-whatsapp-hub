@@ -1,56 +1,15 @@
-const STAFF_SESSION_KEY="gohHubStaffSessionV1";
-
-const STAFF_ACCOUNTS=[
-  {name:"Admin",role:"admin"},
-  {name:"Staff A",role:"staff"},
-  {name:"Staff B",role:"staff"},
-  {name:"Staff C",role:"staff"}
-];
-
 window.CURRENT_STAFF="";
 window.CURRENT_ROLE="";
+window.CURRENT_STAFF_ID="";
 
 
 function staffInitials(name){
-  return name
+  return (name||"")
     .split(" ")
     .map(x=>x[0])
     .join("")
     .slice(0,2)
     .toUpperCase();
-}
-
-
-function saveStaffSession(account){
-
-  localStorage.setItem(
-    STAFF_SESSION_KEY,
-    JSON.stringify(account)
-  );
-
-}
-
-
-function loadStaffSession(){
-
-  try{
-
-    const saved=JSON.parse(
-      localStorage.getItem(STAFF_SESSION_KEY)||"null"
-    );
-
-    if(!saved)return null;
-
-    return STAFF_ACCOUNTS.find(
-      a=>a.name===saved.name
-    )||null;
-
-  }catch(e){
-
-    return null;
-
-  }
-
 }
 
 
@@ -112,8 +71,9 @@ function createLoginScreen(){
         color:#77847f;
         font-size:13px;
       ">
-        Company WhatsApp Customer Service
+        Staff Login
       </p>
+
 
       <label style="
         display:block;
@@ -122,31 +82,71 @@ function createLoginScreen(){
         margin-bottom:7px;
         color:#4d5b55;
       ">
-        Staff Account
+        Email
       </label>
 
-      <select
-        id="staffLoginSelect"
+      <input
+        id="staffEmail"
+        type="email"
+        autocomplete="email"
+        placeholder="staff@company.com"
         style="
           width:100%;
+          box-sizing:border-box;
           border:1px solid #d9e3df;
           border-radius:10px;
           padding:12px;
           font-size:14px;
           outline:none;
-          background:white;
+          margin-bottom:14px;
         "
       >
-        ${STAFF_ACCOUNTS.map(a=>`
-          <option value="${a.name}">
-            ${a.name}
-            ${a.role==="admin"?" — Administrator":""}
-          </option>
-        `).join("")}
-      </select>
+
+
+      <label style="
+        display:block;
+        font-size:12px;
+        font-weight:bold;
+        margin-bottom:7px;
+        color:#4d5b55;
+      ">
+        Password
+      </label>
+
+      <input
+        id="staffPassword"
+        type="password"
+        autocomplete="current-password"
+        placeholder="Password"
+        style="
+          width:100%;
+          box-sizing:border-box;
+          border:1px solid #d9e3df;
+          border-radius:10px;
+          padding:12px;
+          font-size:14px;
+          outline:none;
+        "
+      >
+
+
+      <div
+        id="staffLoginError"
+        style="
+          display:none;
+          margin-top:12px;
+          padding:10px;
+          background:#fff0f0;
+          color:#b42318;
+          border-radius:8px;
+          font-size:12px;
+        "
+      ></div>
+
 
       <button
         id="staffLoginBtn"
+        type="button"
         style="
           width:100%;
           margin-top:14px;
@@ -161,6 +161,7 @@ function createLoginScreen(){
       >
         Login
       </button>
+
 
       <div style="
         margin-top:18px;
@@ -182,34 +183,181 @@ function createLoginScreen(){
 
   document
     .getElementById("staffLoginBtn")
-    .onclick=loginSelectedStaff;
+    .onclick=loginStaff;
+
+  document
+    .getElementById("staffPassword")
+    .addEventListener("keydown",e=>{
+
+      if(e.key==="Enter"){
+        loginStaff();
+      }
+
+    });
 
 }
 
 
-function loginSelectedStaff(){
+function showLoginError(message){
 
-  const name=document
-    .getElementById("staffLoginSelect")
-    .value;
-
-  const account=STAFF_ACCOUNTS.find(
-    a=>a.name===name
+  const box=document.getElementById(
+    "staffLoginError"
   );
 
-  if(!account)return;
+  if(!box)return;
 
-  saveStaffSession(account);
-
-  activateStaff(account);
+  box.textContent=message;
+  box.style.display="block";
 
 }
 
 
-function activateStaff(account){
+function clearLoginError(){
 
-  window.CURRENT_STAFF=account.name;
-  window.CURRENT_ROLE=account.role;
+  const box=document.getElementById(
+    "staffLoginError"
+  );
+
+  if(!box)return;
+
+  box.textContent="";
+  box.style.display="none";
+
+}
+
+
+async function getStaffProfile(userId){
+
+  const {data,error}=
+    await window.supabaseClient
+      .from("staff_profiles")
+      .select("id,name,role")
+      .eq("id",userId)
+      .single();
+
+  if(error){
+    return {
+      profile:null,
+      error
+    };
+  }
+
+  return {
+    profile:data,
+    error:null
+  };
+
+}
+
+
+async function loginStaff(){
+
+  clearLoginError();
+
+  const email=document
+    .getElementById("staffEmail")
+    .value
+    .trim();
+
+  const password=document
+    .getElementById("staffPassword")
+    .value;
+
+  if(!email || !password){
+
+    showLoginError(
+      "Please enter your email and password."
+    );
+
+    return;
+  }
+
+
+  const btn=document.getElementById(
+    "staffLoginBtn"
+  );
+
+  btn.disabled=true;
+  btn.textContent="Signing in...";
+
+
+  const {data,error}=
+    await window.supabaseClient.auth
+      .signInWithPassword({
+        email,
+        password
+      });
+
+
+  if(error){
+
+    btn.disabled=false;
+    btn.textContent="Login";
+
+    showLoginError(
+      error.message||"Login failed."
+    );
+
+    return;
+  }
+
+
+  const activated=
+    await activateSupabaseUser(
+      data.user
+    );
+
+
+  btn.disabled=false;
+  btn.textContent="Login";
+
+
+  if(!activated){
+
+    await window.supabaseClient.auth
+      .signOut();
+
+  }
+
+}
+
+
+async function activateSupabaseUser(user){
+
+  if(!user)return false;
+
+
+  const result=
+    await getStaffProfile(user.id);
+
+
+  if(
+    result.error ||
+    !result.profile
+  ){
+
+    const screen=document.getElementById(
+      "staffLoginScreen"
+    );
+
+    if(screen){
+      screen.style.display="flex";
+    }
+
+    showLoginError(
+      "This account is not linked to a GOH staff profile."
+    );
+
+    return false;
+  }
+
+
+  const profile=result.profile;
+
+  window.CURRENT_STAFF_ID=profile.id;
+  window.CURRENT_STAFF=profile.name;
+  window.CURRENT_ROLE=profile.role;
+
 
   const screen=document.getElementById(
     "staffLoginScreen"
@@ -219,16 +367,29 @@ function activateStaff(account){
     screen.style.display="none";
   }
 
+
   updateStaffSidebar();
 
-  if(account.role==="admin"){
+
+  if(profile.role==="admin"){
 
     filter="all";
 
     renderList();
 
-    if(chats.length){
-      openChat(activeId||chats[0].id);
+    const active=chats.find(
+      c=>c.id===activeId
+    );
+
+    if(active){
+
+      openChat(active.id);
+
+    }else if(chats.length){
+
+      activeId=chats[0].id;
+      openChat(activeId);
+
     }
 
   }else{
@@ -236,8 +397,9 @@ function activateStaff(account){
     filter="mine";
 
     const first=chats.find(
-      c=>c.assigned===account.name
+      c=>c.assigned===profile.name
     );
+
 
     if(first){
 
@@ -267,17 +429,36 @@ function activateStaff(account){
 
   }
 
+
+  return true;
+
 }
 
 
-function logoutStaff(){
+async function logoutStaff(){
 
-  localStorage.removeItem(
-    STAFF_SESSION_KEY
-  );
+  await window.supabaseClient.auth
+    .signOut();
 
+  window.CURRENT_STAFF_ID="";
   window.CURRENT_STAFF="";
   window.CURRENT_ROLE="";
+
+
+  const email=document.getElementById(
+    "staffEmail"
+  );
+
+  const password=document.getElementById(
+    "staffPassword"
+  );
+
+  if(email)email.value="";
+  if(password)password.value="";
+
+
+  clearLoginError();
+
 
   const screen=document.getElementById(
     "staffLoginScreen"
@@ -296,22 +477,32 @@ function updateStaffSidebar(){
 
   if(!user)return;
 
+
   user.innerHTML=`
+
     <div class="avatar">
-      ${staffInitials(window.CURRENT_STAFF)}
+      ${staffInitials(
+        window.CURRENT_STAFF
+      )}
     </div>
 
+
     <div style="flex:1;">
+
       <strong>
         ${window.CURRENT_STAFF}
       </strong>
 
       <small>
-        ● ${window.CURRENT_ROLE==="admin"
-          ?"Administrator"
-          :"Online"}
+        ● ${
+          window.CURRENT_ROLE==="admin"
+            ?"Administrator"
+            :"Online"
+        }
       </small>
+
     </div>
+
 
     <button
       onclick="logoutStaff()"
@@ -325,6 +516,7 @@ function updateStaffSidebar(){
     >
       ↪
     </button>
+
   `;
 
 }
@@ -332,8 +524,12 @@ function updateStaffSidebar(){
 
 function staffCanAccess(chat){
 
-  if(window.CURRENT_ROLE==="admin")
+  if(
+    window.CURRENT_ROLE==="admin"
+  ){
     return true;
+  }
+
 
   return (
     chat.assigned===
@@ -348,7 +544,10 @@ function enforceStaffConversationAccess(){
   if(
     !window.CURRENT_STAFF ||
     window.CURRENT_ROLE==="admin"
-  )return;
+  ){
+    return;
+  }
+
 
   document
     .querySelectorAll(".conv")
@@ -356,13 +555,18 @@ function enforceStaffConversationAccess(){
 
       const match=(
         row.getAttribute("onclick")||""
-      ).match(/openChat\((\d+)\)/);
+      ).match(
+        /openChat\((\d+)\)/
+      );
+
 
       if(!match)return;
+
 
       const chat=chats.find(
         c=>c.id===Number(match[1])
       );
+
 
       if(
         chat &&
@@ -372,6 +576,7 @@ function enforceStaffConversationAccess(){
       }
 
     });
+
 
   if(
     !document.querySelector(
@@ -397,46 +602,38 @@ function enforceStaffConversationAccess(){
 
 function updateAssignmentControl(){
 
-  const chat=chats.find(
-    c=>c.id===activeId
-  );
-
-  if(!chat)return;
-
   const selects=[
-    ...details.querySelectorAll("select")
+    ...details.querySelectorAll(
+      "select"
+    )
   ];
 
-  const assignedSelect=selects.find(
-    s=>(
-      s.getAttribute("onchange")||""
-    ).includes("changeAssigned")
-  );
+
+  const assignedSelect=
+    selects.find(
+      s=>(
+        s.getAttribute("onchange")||""
+      ).includes(
+        "changeAssigned"
+      )
+    );
+
 
   if(!assignedSelect)return;
 
-  const names=[
-    "Unassigned",
-    ...STAFF_ACCOUNTS.map(a=>a.name)
-  ];
 
-  assignedSelect.innerHTML=
-    names.map(name=>`
-      <option
-        ${chat.assigned===name
-          ?"selected"
-          :""}
-      >
-        ${name}
-      </option>
-    `).join("");
-
-  if(window.CURRENT_ROLE!=="admin"){
+  if(
+    window.CURRENT_ROLE!=="admin"
+  ){
 
     assignedSelect.disabled=true;
 
     assignedSelect.title=
       "Only an administrator can reassign conversations.";
+
+  }else{
+
+    assignedSelect.disabled=false;
 
   }
 
@@ -445,9 +642,11 @@ function updateAssignmentControl(){
 
 function updateRoleUI(){
 
-  const unassigned=document.querySelector(
-    '[data-filter="unassigned"]'
-  );
+  const unassigned=
+    document.querySelector(
+      '[data-filter="unassigned"]'
+    );
+
 
   if(unassigned){
 
@@ -463,6 +662,7 @@ function updateRoleUI(){
 
 const staffRenderList=renderList;
 
+
 renderList=function(){
 
   staffRenderList();
@@ -476,13 +676,16 @@ renderList=function(){
 
 const staffOpenChat=openChat;
 
+
 openChat=function(id){
 
   const chat=chats.find(
     c=>c.id===id
   );
 
+
   if(!chat)return;
+
 
   if(
     window.CURRENT_STAFF &&
@@ -491,6 +694,7 @@ openChat=function(id){
     return;
   }
 
+
   staffOpenChat(id);
 
   updateAssignmentControl();
@@ -498,18 +702,69 @@ openChat=function(id){
 };
 
 
-createLoginScreen();
+async function initializeStaffAuth(){
 
-const savedStaff=loadStaffSession();
+  createLoginScreen();
 
-if(savedStaff){
+  localStorage.removeItem(
+    "gohHubStaffSessionV1"
+  );
 
-  activateStaff(savedStaff);
 
-}else{
+  const {
+    data:{
+      session
+    }
+  }=
+    await window.supabaseClient.auth
+      .getSession();
 
-  document
-    .getElementById("staffLoginScreen")
-    .style.display="flex";
+
+  if(
+    session &&
+    session.user
+  ){
+
+    await activateSupabaseUser(
+      session.user
+    );
+
+  }else{
+
+    document
+      .getElementById(
+        "staffLoginScreen"
+      )
+      .style.display="flex";
+
+  }
 
 }
+
+
+window.supabaseClient.auth
+  .onAuthStateChange(
+    (event)=>{
+
+      if(event==="SIGNED_OUT"){
+
+        window.CURRENT_STAFF_ID="";
+        window.CURRENT_STAFF="";
+        window.CURRENT_ROLE="";
+
+        const screen=
+          document.getElementById(
+            "staffLoginScreen"
+          );
+
+        if(screen){
+          screen.style.display="flex";
+        }
+
+      }
+
+    }
+  );
+
+
+initializeStaffAuth();
