@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GOH WhatsApp Hub</title>
+
+<style>
+*{box-sizing:border-box}
+:root{
+  --green:#16a36a;
+  --green-dark:#0b7f52;
+  --bg:#f4f7f6;
+  --panel:#fff;
+  --line:#e7ecea;
+  --text:#1d2925;
+  --muted:#7b8984;
+}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow:hidden;
+}
+.app{
+  display:grid;
+  grid-template-columns:230px 340px 1fr 300px;
+  height:100vh;
+}
+.sidebar{
+  background:#10241d;
+  color:white;
+  padding:18px 14px;
+  display:flex;
+  flex-direction:column;
+}
+.brand{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:8px;
+  margin-bottom:25px;
+}
+.logo{
+  width:42px;height:42px;border-radius:12px;
+  display:grid;place-items:center;
+  background:var(--green);
+  font-weight:bold;font-size:20px;
+}
+.brand small{display:block;color:#91aaa0;margin-top:3px}
+.nav button{
+  width:100%;
+  border:0;
+  background:none;
+  color:#b7c8c1;
+  text-align:left;
+  padding:13px 12px;
+  margin-bottom:5px;
+  border-radius:9px;
+  cursor:pointer;
+  font-size:14px;
+}
+.nav button.active{background:#1b372d;color:white}
+.nav button:hover{background:#1b372d}
+.user{
+  margin-top:auto;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  border-top:1px solid #294238;
+  padding:15px 6px 3px;
+}
+.avatar{
+  width:38px;height:38px;
+  background:#dceee7;
+  color:#147750;
+  border-radius:50%;
+  display:grid;place-items:center;
+  font-weight:bold;
+}
+.user small{display:block;color:#8ba298}
+
+.list-panel{
+  background:white;
+  border-right:1px solid var(--line);
+  display:flex;
+  flex-direction:column;
+}
+.list-head{padding:20px 18px 12px}
+.list-head h2{margin:0 0 4px}
+.list-head p{margin:0;color:var(--muted);font-size:13px}
+.search{
+  margin:12px 18px;
+  background:#f3f6f5;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px 12px;
+}
+.search input{
+  width:100%;border:0;background:none;outline:none;
+}
+.tabs{display:flex;gap:5px;padding:0 18px 12px}
+.tabs button{
+  border:0;background:#f1f4f3;
+  border-radius:20px;padding:7px 12px;
+  cursor:pointer;color:#66736e
+}
+.tabs button.active{background:#ddf5ea;color:#08744a}
+.conversations{overflow:auto}
+.conv{
+  padding:14px 16px;
+  display:flex;
+  gap:11px;
+  border-top:1px solid #f1f3f2;
+  cursor:pointer;
+}
+.conv:hover,.conv.active{background:#edf9f4}
+.conv-content{flex:1;min-width:0}
+.conv-top{display:flex;justify-content:space-between}
+.conv strong{font-size:14px}
+.conv time{font-size:11px;color:var(--muted)}
+.preview{
+  font-size:12px;color:#788680;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-top:5px;
+}
+.badge{
+  background:var(--green);
+  color:white;
+  width:19px;height:19px;
+  border-radius:50%;
+  display:grid;place-items:center;
+  font-size:10px;
+  margin-top:6px;
+}
+
+.chat{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+.chat-head{
+  height:76px;
+  background:white;
+  border-bottom:1px solid var(--line);
+  padding:14px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.contact{
+  display:flex;gap:10px;align-items:center
+}
+.contact small{display:block;color:var(--muted);margin-top:3px}
+.status{
+  font-size:12px;
+  background:#e6f7ef;
+  color:#08794d;
+  padding:7px 10px;
+  border-radius:20px;
+}
+.messages{
+  flex:1;
+  padding:24px;
+  overflow:auto;
+  background:#f5f8f7;
+}
+.message{
+  max-width:68%;
+  padding:11px 13px;
+  margin-bottom:10px;
+  border-radius:12px;
+  font-size:14px;
+  line-height:1.4;
+}
+.in{
+  background:white;
+  border:1px solid var(--line);
+}
+.out{
+  background:#d9f8e9;
+  margin-left:auto;
+}
+.message small{
+  display:block;
+  text-align:right;
+  font-size:10px;
+  color:#84908c;
+  margin-top:5px;
+}
+.composer{
+  background:white;
+  border-top:1px solid var(--line);
+  padding:12px 16px;
+}
+.compose-box{
+  display:flex;
+  gap:8px;
+}
+textarea{
+  flex:1;
+  resize:none;
+  border:1px solid #dbe3df;
+  border-radius:10px;
+  padding:11px;
+  outline:none;
+  font-family:inherit;
+}
+.send{
+  width:80px;
+  border:0;
+  border-radius:10px;
+  background:var(--green);
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+.send:hover{background:var(--green-dark)}
+.compose-info{
+  display:flex;
+  justify-content:space-between;
+  font-size:11px;
+  color:#8a9792;
+  margin-top:7px;
+}
+.ai{
+  color:#08784d;
+}
+
+.details{
+  background:white;
+  border-left:1px solid var(--line);
+  overflow:auto;
+}
+.detail-head{
+  padding:22px;
+  text-align:center;
+  border-bottom:1px solid var(--line);
+}
+.detail-head .avatar{
+  width:62px;height:62px;
+  margin:auto auto 10px;
+  font-size:20px;
+}
+.detail-head h3{margin:0 0 5px}
+.detail-head p{margin:0;color:var(--muted);font-size:13px}
+.section{
+  padding:18px;
+  border-bottom:1px solid var(--line);
+}
+.section h4{
+  margin:0 0 12px;
+  font-size:12px;
+  color:#78857f;
+  text-transform:uppercase;
+}
+label{
+  display:block;
+  font-size:12px;
+  color:#77847f;
+  margin-bottom:6px;
+}
+select{
+  width:100%;
+  padding:9px;
+  border:1px solid #dfe5e2;
+  border-radius:8px;
+  margin-bottom:12px;
+}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{
+  background:#edf3f1;
+  border-radius:15px;
+  padding:6px 9px;
+  font-size:11px;
+}
+.note{
+  padding:10px;
+  border-radius:8px;
+  background:#fff7d8;
+  font-size:12px;
+  line-height:1.4;
+}
+.empty{
+  text-align:center;
+  color:#87958f;
+  margin-top:80px;
+}
+
+@media(max-width:1100px){
+  .app{grid-template-columns:70px 300px 1fr}
+  .details{display:none}
+  .brand div:last-child,.nav span,.user div:last-child{display:none}
+  .sidebar{padding:15px 8px}
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="logo">G</div>
+    <div>
+      <strong>GOH Hub</strong>
+      <small>WhatsApp Inbox</small>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="active">💬 <span>Inbox</span></button>
+    <button>✨ <span>AI Agent</span></button>
+    <button>📊 <span>Analytics</span></button>
+    <button>⚙️ <span>Settings</span></button>
+  </div>
+
+  <div class="user">
+    <div class="avatar">QA</div>
+    <div>
+      <strong>Admin</strong>
+      <small>● Online</small>
+    </div>
+  </div>
+</aside>
+
+<section class="list-panel">
+
+  <div class="list-head">
+    <h2>Inbox</h2>
+    <p>WhatsApp customer conversations</p>
+  </div>
+
+  <div class="search">
+    <input id="search" placeholder="Search customer or phone">
+  </div>
+
+  <div class="tabs">
+    <button class="active" data-filter="all">All</button>
+    <button data-filter="unread">Unread</button>
+    <button data-filter="mine">Mine</button>
+  </div>
+
+  <div class="conversations" id="conversationList"></div>
+
+</section>
+
+<section class="chat">
+
+  <header class="chat-head" id="chatHeader"></header>
+
+  <main class="messages" id="messages">
+    <div class="empty">Select a conversation</div>
+  </main>
+
+  <div class="composer">
+    <div class="compose-box">
+      <textarea id="messageInput" rows="2" placeholder="Type WhatsApp reply..."></textarea>
+      <button class="send" id="sendBtn">Send</button>
+    </div>
+
+    <div class="compose-info">
+      <span>Enter to send · Shift + Enter new line</span>
+      <span class="ai">● AI standby</span>
+    </div>
+  </div>
+
+</section>
+
+<aside class="details" id="details"></aside>
+
+</div>
+
+<script>
+
+const chats=[
+{
+id:1,
+name:"Aina",
+phone:"+60 12-884 2210",
+unread:2,
+assigned:"Admin",
+status:"Open",
+tags:["Booking","Urgent"],
+preview:"Hi, esok boleh hantar barang tak?",
+messages:[
+{from:"customer",text:"Hi",time:"9:12 AM"},
+{from:"customer",text:"Esok boleh hantar barang tak?",time:"9:12 AM"},
+{from:"staff",text:"Hi Aina 👋 Boleh. Boleh saya tahu company dan anggaran arrival time?",time:"9:13 AM"}
+]
+},
+{
+id:2,
+name:"Jason Lim",
+phone:"+60 16-778 4401",
+unread:1,
+assigned:"Unassigned",
+status:"New",
+tags:["Receiving"],
+preview:"Barang saya dah sampai warehouse?",
+messages:[
+{from:"customer",text:"Morning",time:"8:42 AM"},
+{from:"customer",text:"Barang saya dah sampai warehouse?",time:"8:43 AM"}
+]
+},
+{
+id:3,
+name:"HOKA Malaysia",
+phone:"+60 11-2211 8820",
+unread:0,
+assigned:"Admin",
+status:"Pending",
+tags:["Receiving"],
+preview:"Okay noted thank you",
+messages:[
+{from:"staff",text:"Receiving for DO 8821 has been completed.",time:"Yesterday"},
+{from:"customer",text:"Okay noted thank you",time:"Yesterday"}
+]
+},
+{
+id:4,
+name:"Earth Home",
+phone:"+60 17-390 1145",
+unread:1,
+assigned:"Staff A",
+status:"Open",
+tags:["Discrepancy"],
+preview:"Ada gambar damage tak?",
+messages:[
+{from:"customer",text:"Ada gambar damage tak?",time:"Yesterday"}
+]
+}
+];
+
+let activeId=1;
+let filter="all";
+
+function initials(name){
+return name.split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase();
+}
+
+function renderList(){
+
+const q=document.getElementById("search").value.toLowerCase();
+
+let list=chats.filter(c=>{
+if(filter==="unread" && !c.unread)return false;
+if(filter==="mine" && c.assigned!=="Admin")return false;
+return (c.name+" "+c.phone+" "+c.preview).toLowerCase().includes(q);
+});
+
+conversationList.innerHTML=list.map(c=>`
+<div class="conv ${c.id===activeId?"active":""}" onclick="openChat(${c.id})">
+<div class="avatar">${initials(c.name)}</div>
+<div class="conv-content">
+<div class="conv-top">
+<strong>${c.name}</strong>
+<time>${c.messages.at(-1)?.time||""}</time>
+</div>
+<div class="preview">${c.preview}</div>
+</div>
+${c.unread?`<div class="badge">${c.unread}</div>`:""}
+</div>
+`).join("");
+
+}
+
+function openChat(id){
+
+activeId=id;
+
+const c=chats.find(x=>x.id===id);
+c.unread=0;
+
+chatHeader.innerHTML=`
+<div class="contact">
+<div class="avatar">${initials(c.name)}</div>
+<div>
+<strong>${c.name}</strong>
+<small>${c.phone} · WhatsApp</small>
+</div>
+</div>
+<span class="status">${c.status}</span>
+`;
+
+messages.innerHTML=c.messages.map(m=>`
+<div class="message ${m.from==="staff"?"out":"in"}">
+${m.text}
+<small>${m.time}</small>
+</div>
+`).join("");
+
+messages.scrollTop=messages.scrollHeight;
+
+details.innerHTML=`
+<div class="detail-head">
+<div class="avatar">${initials(c.name)}</div>
+<h3>${c.name}</h3>
+<p>${c.phone}</p>
+</div>
+
+<div class="section">
+<h4>Conversation</h4>
+
+<label>Assigned to</label>
+<select onchange="changeAssigned(this.value)">
+<option ${c.assigned==="Unassigned"?"selected":""}>Unassigned</option>
+<option ${c.assigned==="Admin"?"selected":""}>Admin</option>
+<option ${c.assigned==="Staff A"?"selected":""}>Staff A</option>
+<option>Staff B</option>
+</select>
+
+<label>Status</label>
+<select onchange="changeStatus(this.value)">
+<option ${c.status==="New"?"selected":""}>New</option>
+<option ${c.status==="Open"?"selected":""}>Open</option>
+<option ${c.status==="Pending"?"selected":""}>Pending</option>
+<option ${c.status==="Resolved"?"selected":""}>Resolved</option>
+</select>
+</div>
+
+<div class="section">
+<h4>Tags</h4>
+<div class="tags">
+${c.tags.map(t=>`<span class="tag">${t}</span>`).join("")}
+</div>
+</div>
+
+<div class="section">
+<h4>Internal Note</h4>
+<div class="note">
+Customer cannot see internal notes. Staff notes will appear here.
+</div>
+</div>
+`;
+
+renderList();
+
+}
+
+function changeAssigned(v){
+const c=chats.find(x=>x.id===activeId);
+c.assigned=v;
+renderList();
+}
+
+function changeStatus(v){
+const c=chats.find(x=>x.id===activeId);
+c.status=v;
+openChat(activeId);
+}
+
+function sendMessage(){
+
+const input=document.getElementById("messageInput");
+const text=input.value.trim();
+
+if(!text)return;
+
+const c=chats.find(x=>x.id===activeId);
+
+const now=new Date().toLocaleTimeString([],{
+hour:"2-digit",
+minute:"2-digit"
+});
+
+c.messages.push({
+from:"staff",
+text,
+time:now
+});
+
+c.preview=text;
+c.assigned="Admin";
+c.status="Open";
+
+input.value="";
+
+openChat(activeId);
+
+}
+
+sendBtn.onclick=sendMessage;
+
+messageInput.addEventListener("keydown",e=>{
+if(e.key==="Enter"&&!e.shiftKey){
+e.preventDefault();
+sendMessage();
+}
+});
+
+search.addEventListener("input",renderList);
+
+document.querySelectorAll(".tabs button").forEach(btn=>{
+btn.onclick=()=>{
+document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
+filter=btn.dataset.filter;
+renderList();
+};
+});
+
+renderList();
+openChat(1);
+
+</script>
+
+</body>
+</html>
