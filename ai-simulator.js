@@ -135,31 +135,7 @@ function scheduleAI(chat){
 
 async function receiveCustomerMessage(text){    const chat=activeChat();    if(!chat || !text.trim()) return;    const clean=text.trim();     if(     window.supabaseClient &&     window.CURRENT_STAFF_ID   ){      const {error:messageError}=       await window.supabaseClient         .from("messages")         .insert({           conversation_id:chat.id,           sender_type:"customer",           sender_staff_id:null,           sender_name:             chat.type==="group"               ?"Customer PIC"               :chat.name,           message_text:clean         });       if(messageError){        console.error(         "Customer message save failed",         messageError       );        alert(         "Customer test message could not be saved."       );        return;     }       const waitingSince=       chat.slaWaitingSince         ?new Date(             chat.slaWaitingSince           ).toISOString()         :new Date().toISOString();       const {error:conversationError}=       await window.supabaseClient         .from("conversations")         .update({           preview:clean,           status:"Open",           unread_count:             (chat.unread||0)+1,           sla_waiting_since:             waitingSince         })         .eq("id",chat.id);       if(conversationError){        console.error(         "Incoming conversation update failed",         conversationError       );      }    }     chat.messages.push({     from:"customer",     sender:       chat.type==="group"         ?"Customer PIC"         :chat.name,     text:clean,     time:hubTime()   });     chat.preview=clean;   chat.status="Open";     if(!aiBuffers[chat.id]){     aiBuffers[chat.id]=[];   }     aiBuffers[chat.id].push(clean);     openChat(chat.id);    scheduleAI(chat);  }
 
-  const chat=activeChat();
-
-  if(!chat || !text.trim()) return;
-
-  const clean=text.trim();
-
-  chat.messages.push({
-    from:"customer",
-    text:clean,
-    time:hubTime()
-  });
-
-  chat.preview=clean;
-  chat.status="Open";
-
-  if(!aiBuffers[chat.id]){
-    aiBuffers[chat.id]=[];
-  }
-
-  aiBuffers[chat.id].push(clean);
-
-  openChat(chat.id);
-
-  scheduleAI(chat);
-}
+  
 
 function createSimulator(){
 
