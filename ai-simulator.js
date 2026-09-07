@@ -129,7 +129,29 @@ liveChat.messages.push({
 
 liveChat.preview=reply;
 liveChat.status="Open";
+if(
+  window.supabaseClient &&
+  window.CURRENT_STAFF_ID
+){
+  window.supabaseClient
+    .rpc(
+      "insert_ai_message",
+      {
+        p_conversation_id:chatId,
+        p_message_text:reply
+      }
+    )
+    .then(({error})=>{
 
+      if(error){
+        console.error(
+          "AI message save failed",
+          error
+        );
+      }
+
+    });
+}
     if(activeId===chatId){
       openChat(chatId);
     }else{
