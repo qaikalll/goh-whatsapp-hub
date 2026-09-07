@@ -216,8 +216,25 @@ async function loadSupabaseInbox(){
             ),
 
 
-          assignedId:
-            row.assigned_to||null,
+         assignedId:
+  row.assigned_to||null,
+
+originalAssignedId:
+  row.original_assigned_to||null,
+
+originalAssigned:
+  row.original_assigned_to
+    ?assignedNameFromDB(
+        row.original_assigned_to
+      )
+    :"",
+
+escalatedAt:
+  row.escalated_at
+    ?new Date(
+        row.escalated_at
+      ).getTime()
+    :null,
 
 
           status:
