@@ -111,7 +111,7 @@ function scheduleAI(chat){
 
     chat.messages.push({
       from:"staff",
-      text:"🤖 "+reply,
+      text:reply,
       time:hubTime()
     });
 
