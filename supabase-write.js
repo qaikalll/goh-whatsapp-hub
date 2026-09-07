@@ -1,5 +1,11 @@
 // GOH WhatsApp Hub — Shared database writes
 
+window.GOH_STAFF_PROFILES=[];
+
+
+// ================================
+// HELPERS
+// ================================
 
 async function refreshSharedInbox(){
   if(typeof window.loadSupabaseInbox==="function"){
@@ -7,21 +13,81 @@ async function refreshSharedInbox(){
   }
 }
 
-
 function currentConversation(){
-  return chats.find(
-    c=>c.id===activeId
-  );
+  return chats.find(c=>c.id===activeId);
+}
+
+function staffNameFromId(id){
+
+  if(!id)return "Unassigned";
+
+  const staff=
+    window.GOH_STAFF_PROFILES
+      .find(s=>s.id===id);
+
+  if(staff)return staff.name;
+
+  if(id===window.CURRENT_STAFF_ID){
+    return window.CURRENT_STAFF;
+  }
+
+  return "Assigned";
 }
 
 
+// ================================
+// LOAD REAL STAFF
+// ================================
+
+async function loadStaffProfiles(){
+
+  if(
+    !window.supabaseClient ||
+    !window.CURRENT_STAFF_ID
+  )return;
+
+  const {data,error}=
+    await window.supabaseClient
+      .from("staff_profiles")
+      .select("id,name,role")
+      .order("name");
+
+  if(error){
+    console.error(
+      "Staff profiles load failed",
+      error
+    );
+    return;
+  }
+
+  window.GOH_STAFF_PROFILES=
+    data||[];
+
+  try{
+
+    assignedNameFromDB=
+      function(assignedId){
+        return staffNameFromId(
+          assignedId
+        );
+      };
+
+  }catch(e){}
+
+  await refreshSharedInbox();
+}
+
+
+// ================================
 // SEND STAFF MESSAGE
+// ================================
 
 sendMessage=async function(){
 
-  const input=document.getElementById(
-    "messageInput"
-  );
+  const input=
+    document.getElementById(
+      "messageInput"
+    );
 
   const text=input.value.trim();
 
@@ -34,14 +100,13 @@ sendMessage=async function(){
     !window.CURRENT_STAFF_ID
   )return;
 
-
-  const btn=document.getElementById(
-    "sendBtn"
-  );
+  const btn=
+    document.getElementById(
+      "sendBtn"
+    );
 
   btn.disabled=true;
   btn.textContent="Sending...";
-
 
   const {error:messageError}=
     await window.supabaseClient
@@ -55,7 +120,6 @@ sendMessage=async function(){
           window.CURRENT_STAFF,
         message_text:text
       });
-
 
   if(messageError){
 
@@ -74,7 +138,6 @@ sendMessage=async function(){
     return;
   }
 
-
   const {error:conversationError}=
     await window.supabaseClient
       .from("conversations")
@@ -85,39 +148,34 @@ sendMessage=async function(){
       })
       .eq("id",chat.id);
 
-
   if(conversationError){
-
     console.error(
       "Conversation update failed",
       conversationError
     );
-
   }
-
 
   input.value="";
 
   await refreshSharedInbox();
 
-
   btn.disabled=false;
   btn.textContent="Send";
-
 };
 
 
 sendBtn.onclick=sendMessage;
 
 
+// ================================
 // STATUS
+// ================================
 
 changeStatus=async function(value){
 
   const chat=currentConversation();
 
   if(!chat)return;
-
 
   const {error}=
     await window.supabaseClient
@@ -126,7 +184,6 @@ changeStatus=async function(value){
         status:value
       })
       .eq("id",chat.id);
-
 
   if(error){
 
@@ -142,13 +199,13 @@ changeStatus=async function(value){
     return;
   }
 
-
   await refreshSharedInbox();
-
 };
 
 
+// ================================
 // ASSIGNMENT
+// ================================
 
 changeAssigned=async function(value){
 
@@ -156,33 +213,27 @@ changeAssigned=async function(value){
 
   if(!chat)return;
 
-
   let assignedId=null;
 
+  if(value!=="Unassigned"){
 
-  if(value==="Unassigned"){
+    const staff=
+      window.GOH_STAFF_PROFILES
+        .find(s=>s.id===value);
 
-    assignedId=null;
+    if(!staff){
 
-  }else if(
-    value===window.CURRENT_STAFF
-  ){
+      alert(
+        "Staff account not found."
+      );
 
-    assignedId=
-      window.CURRENT_STAFF_ID;
+      await loadStaffProfiles();
 
-  }else{
+      return;
+    }
 
-    alert(
-      "This staff account has not been created in Supabase yet."
-    );
-
-    await refreshSharedInbox();
-
-    return;
-
+    assignedId=staff.id;
   }
-
 
   const {error}=
     await window.supabaseClient
@@ -191,7 +242,6 @@ changeAssigned=async function(value){
         assigned_to:assignedId
       })
       .eq("id",chat.id);
-
 
   if(error){
 
@@ -207,13 +257,13 @@ changeAssigned=async function(value){
     return;
   }
 
-
   await refreshSharedInbox();
-
 };
 
 
+// ================================
 // TAGS
+// ================================
 
 toggleTag=async function(tag){
 
@@ -221,24 +271,22 @@ toggleTag=async function(tag){
 
   if(!chat)return;
 
-
   let newTags=[
     ...(chat.tags||[])
   ];
 
-
   if(newTags.includes(tag)){
 
-    newTags=newTags.filter(
-      t=>t!==tag
-    );
+    newTags=
+      newTags.filter(
+        t=>t!==tag
+      );
 
   }else{
 
     newTags.push(tag);
 
   }
-
 
   const {error}=
     await window.supabaseClient
@@ -247,7 +295,6 @@ toggleTag=async function(tag){
         tags:newTags
       })
       .eq("id",chat.id);
-
 
   if(error){
 
@@ -263,21 +310,22 @@ toggleTag=async function(tag){
     return;
   }
 
-
   await refreshSharedInbox();
-
 };
 
 
+// ================================
 // INTERNAL NOTE
+// ================================
 
 saveInternalNote=async function(){
 
   const chat=currentConversation();
 
-  const input=document.getElementById(
-    "internalNoteInput"
-  );
+  const input=
+    document.getElementById(
+      "internalNoteInput"
+    );
 
   if(
     !chat ||
@@ -285,11 +333,9 @@ saveInternalNote=async function(){
     !window.CURRENT_STAFF_ID
   )return;
 
-
   const text=input.value.trim();
 
   if(!text)return;
-
 
   const {error}=
     await window.supabaseClient
@@ -300,7 +346,6 @@ saveInternalNote=async function(){
           window.CURRENT_STAFF_ID,
         note_text:text
       });
-
 
   if(error){
 
@@ -316,13 +361,13 @@ saveInternalNote=async function(){
     return;
   }
 
-
   await refreshSharedInbox();
-
 };
 
 
-// REMOVE OLD DUMMY STAFF OPTIONS
+// ================================
+// REAL ASSIGNMENT DROPDOWN
+// ================================
 
 function refreshAssignmentOptions(){
 
@@ -330,35 +375,30 @@ function refreshAssignmentOptions(){
 
   if(!chat)return;
 
-
   const selects=[
     ...details.querySelectorAll(
       "select"
     )
   ];
 
-
   const assignedSelect=
     selects.find(
       s=>(
-        s.getAttribute("onchange")||""
+        s.getAttribute(
+          "onchange"
+        )||""
       ).includes(
         "changeAssigned"
       )
     );
 
-
   if(!assignedSelect)return;
 
-
   const currentValue=
-    chat.assignedId
-      ?window.CURRENT_STAFF
-      :"Unassigned";
+    chat.assignedId||
+    "Unassigned";
 
-
-  assignedSelect.innerHTML=`
-
+  let options=`
     <option
       value="Unassigned"
       ${currentValue==="Unassigned"
@@ -367,38 +407,96 @@ function refreshAssignmentOptions(){
     >
       Unassigned
     </option>
-
-    <option
-      value="${window.CURRENT_STAFF}"
-      ${currentValue===window.CURRENT_STAFF
-        ?"selected"
-        :""}
-    >
-      ${window.CURRENT_STAFF}
-    </option>
-
   `;
 
+  window.GOH_STAFF_PROFILES
+    .forEach(staff=>{
+
+      options+=`
+        <option
+          value="${staff.id}"
+          ${currentValue===staff.id
+            ?"selected"
+            :""}
+        >
+          ${staff.name}
+        </option>
+      `;
+
+    });
+
+  assignedSelect.innerHTML=
+    options;
 
   if(
     window.CURRENT_ROLE!=="admin"
   ){
-
     assignedSelect.disabled=true;
-
   }
-
 }
 
 
+// ================================
+// OPEN CHAT WRAPPER
+// ================================
+
 const supabaseWriteOpenChat=
   openChat;
-
 
 openChat=function(id){
 
   supabaseWriteOpenChat(id);
 
   refreshAssignmentOptions();
-
 };
+
+
+// ================================
+// START
+// ================================
+
+async function waitForStaffProfiles(){
+
+  for(let i=0;i<100;i++){
+
+    if(
+      window.CURRENT_STAFF_ID &&
+      window.CURRENT_STAFF
+    ){
+
+      await loadStaffProfiles();
+      return;
+
+    }
+
+    await new Promise(
+      resolve=>
+        setTimeout(
+          resolve,
+          50
+        )
+    );
+  }
+}
+
+
+window.supabaseClient.auth
+  .onAuthStateChange(
+    (event,session)=>{
+
+      if(
+        event==="SIGNED_IN" &&
+        session?.user
+      ){
+
+        setTimeout(
+          waitForStaffProfiles,
+          150
+        );
+      }
+
+    }
+  );
+
+
+waitForStaffProfiles();
