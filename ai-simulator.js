@@ -107,16 +107,28 @@ function scheduleAI(chat){
     aiBuffers[chatId]=[];
     delete aiTimers[chatId];
 
-    const reply=safeAIReply(chat,combined);
+const liveChat=
+  chats.find(c=>c.id===chatId);
 
-    chat.messages.push({
-      from:"staff",
-      text:reply,
-      time:hubTime()
-    });
+if(!liveChat){
+  aiStatus("● AI standby");
+  return;
+}
 
-    chat.preview=reply;
-    chat.status="Open";
+const reply=
+  safeAIReply(
+    liveChat,
+    combined
+  );
+
+liveChat.messages.push({
+  from:"staff",
+  text:reply,
+  time:hubTime()
+});
+
+liveChat.preview=reply;
+liveChat.status="Open";
 
     if(activeId===chatId){
       openChat(chatId);
