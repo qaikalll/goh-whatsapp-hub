@@ -448,6 +448,64 @@ openChat=function(id){
   supabaseWriteOpenChat(id);
 
   refreshAssignmentOptions();
+
+  const chat=currentConversation();
+
+  if(
+    chat &&
+    chat.escalatedAt &&
+    chat.originalAssigned
+  ){
+
+    const sections=[
+      ...details.querySelectorAll(".section")
+    ];
+
+    const conversationSection=
+      sections.find(s=>{
+        const h=s.querySelector("h4");
+        return h &&
+          h.textContent.trim()==="Conversation";
+      });
+
+    if(conversationSection){
+
+      const waitingMinutes=
+        chat.slaWaitingSince
+          ?Math.floor(
+              (Date.now()-chat.slaWaitingSince)
+              /60000
+            )
+          :15;
+
+      conversationSection
+        .insertAdjacentHTML(
+          "beforeend",
+          `
+            <div style="
+              margin-top:12px;
+              padding:10px;
+              border-radius:8px;
+              background:#fff1f1;
+              border:1px solid #f1b6b6;
+              color:#b42318;
+              font-size:12px;
+              font-weight:600;
+            ">
+              ⚠ ESCALATED · ${waitingMinutes}m
+              <div style="
+                margin-top:4px;
+                color:#555;
+                font-weight:400;
+              ">
+                Original owner:
+                ${chat.originalAssigned}
+              </div>
+            </div>
+          `
+        );
+    }
+  }
 };
 
 
