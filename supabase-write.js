@@ -108,6 +108,52 @@ sendMessage=async function(){
   btn.disabled=true;
   btn.textContent="Sending...";
 
+
+  // SEND TO REAL WHATSAPP
+  if(
+    chat.phone &&
+    chat.type!=="group"
+  ){
+
+    const {
+      data:metaData,
+      error:metaError
+    }=
+      await window.supabaseClient
+        .functions
+        .invoke(
+          "meta-whatsapp-send",
+          {
+            body:{
+              to:chat.phone,
+              message:text
+            }
+          }
+        );
+
+    if(
+      metaError ||
+      metaData?.error
+    ){
+
+      console.error(
+        "WhatsApp send failed",
+        metaError || metaData
+      );
+
+      btn.disabled=false;
+      btn.textContent="Send";
+
+      alert(
+        "WhatsApp message could not be sent."
+      );
+
+      return;
+    }
+  }
+
+
+  // SAVE MESSAGE TO DATABASE
   const {error:messageError}=
     await window.supabaseClient
       .from("messages")
@@ -132,11 +178,12 @@ sendMessage=async function(){
     btn.textContent="Send";
 
     alert(
-      "Message could not be saved."
+      "Message was sent to WhatsApp but could not be saved."
     );
 
     return;
   }
+
 
   const {error:conversationError}=
     await window.supabaseClient
@@ -149,11 +196,14 @@ sendMessage=async function(){
       .eq("id",chat.id);
 
   if(conversationError){
+
     console.error(
       "Conversation update failed",
       conversationError
     );
+
   }
+
 
   input.value="";
 
