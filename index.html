@@ -607,5 +607,176 @@ openChat(1);
 
 </script>
 <script src="./ai-simulator.js?v=1"></script>
-<script src="./group-mode.js?v=1"></script><script src="./conversation-management.js?v=1"></script><script src="./staff-tools.js?v=1"></script><script src="./details-drawer.js?v=1"></script><script src="./quick-replies.js?v=1"></script><script src="./message-history.js?v=1"></script><script src="./sla-overdue.js?v=1"></script><script src="./english-mode.js?v=1"></script><script src="./human-ai.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./supabase-config.js?v=1"></script><script src="./staff-login.js?v=1"></script><script src="./supabase-sync.js?v=1"></script><script src="./supabase-write.js?v=1"></script><script src="./supabase-realtime.js?v=1"></script></body>
+<script src="./group-mode.js?v=1"></script><script src="./conversation-management.js?v=1"></script><script src="./staff-tools.js?v=1"></script><script src="./details-drawer.js?v=1"></script><script src="./quick-replies.js?v=1"></script><script src="./message-history.js?v=1"></script><script src="./sla-overdue.js?v=1"></script><script src="./english-mode.js?v=1"></script><script src="./human-ai.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./supabase-config.js?v=1"></script><script src="./staff-login.js?v=1"></script><script src="./supabase-sync.js?v=1"></script><script src="./supabase-write.js?v=1"></script><script src="./supabase-realtime.js?v=1"></script><script src="./conversation-management.js?v=1"></script>
+
+<!-- META WHATSAPP COEXISTENCE START -->
+
+<script>
+const META_APP_ID = "2287189202112418";
+const META_CONFIG_ID = "MASUKKAN_CONFIGURATION_ID_AWAK";
+
+window.fbAsyncInit = function () {
+  FB.init({
+    appId: META_APP_ID,
+    cookie: true,
+    xfbml: false,
+    version: "v26.0"
+  });
+
+  console.log("Meta SDK Ready");
+};
+
+/* Load Facebook SDK */
+(function(d, s, id) {
+  if (d.getElementById(id)) return;
+
+  const js = d.createElement(s);
+  js.id = id;
+  js.src = "https://connect.facebook.net/en_US/sdk.js";
+
+  const fjs = d.getElementsByTagName(s)[0];
+  fjs.parentNode.insertBefore(js, fjs);
+
+}(document, "script", "facebook-jssdk"));
+
+
+/* Listen WhatsApp Embedded Signup result */
+window.addEventListener("message", function(event) {
+
+  if (
+    event.origin !== "https://www.facebook.com" &&
+    event.origin !== "https://web.facebook.com"
+  ) {
+    return;
+  }
+
+  let data = event.data;
+
+  try {
+    if (typeof data === "string") {
+      data = JSON.parse(data);
+    }
+  } catch (e) {
+    return;
+  }
+
+  if (!data || data.type !== "WA_EMBEDDED_SIGNUP") {
+    return;
+  }
+
+  console.log("WhatsApp Embedded Signup:", data);
+
+  if (
+    data.event === "FINISH" ||
+    data.event === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING"
+  ) {
+
+    const wabaId = data.data?.waba_id || "";
+    const phoneNumberId = data.data?.phone_number_id || "";
+
+    if (wabaId) {
+      sessionStorage.setItem("waba_id", wabaId);
+    }
+
+    if (phoneNumberId) {
+      sessionStorage.setItem("phone_number_id", phoneNumberId);
+    }
+
+    alert("WhatsApp Business connected successfully.");
+  }
+
+  if (data.event === "CANCEL") {
+    console.log("WhatsApp connection cancelled.");
+  }
+
+  if (data.event === "ERROR") {
+    console.error("WhatsApp connection error:", data);
+    alert("WhatsApp connection failed. Check console.");
+  }
+
+});
+
+
+/* Launch Coexistence */
+function connectWhatsApp() {
+
+  if (META_CONFIG_ID === "MASUKKAN_CONFIGURATION_ID_AWAK") {
+    alert("Masukkan Configuration ID dulu.");
+    return;
+  }
+
+  if (typeof FB === "undefined") {
+    alert("Meta masih loading. Cuba lagi selepas beberapa saat.");
+    return;
+  }
+
+  FB.login(function(response) {
+
+    console.log("Meta response:", response);
+
+    if (
+      response.authResponse &&
+      response.authResponse.code
+    ) {
+
+      const code = response.authResponse.code;
+
+      sessionStorage.setItem(
+        "meta_authorization_code",
+        code
+      );
+
+      console.log(
+        "Meta Authorization Code:",
+        code
+      );
+
+      alert(
+        "Meta authorization successful."
+      );
+    }
+
+  }, {
+
+    config_id: META_CONFIG_ID,
+
+    response_type: "code",
+
+    override_default_response_type: true,
+
+    extras: {
+      setup: {},
+      featureType: "whatsapp_business_app_onboarding",
+      sessionInfoVersion: "3"
+    }
+
+  });
+
+}
+
+
+/* Add Connect WhatsApp button automatically */
+document.addEventListener("DOMContentLoaded", function() {
+
+  const nav = document.querySelector(".nav");
+
+  if (!nav) return;
+
+  const button = document.createElement("button");
+
+  button.id = "connectWhatsApp";
+
+  button.innerHTML =
+    "🔗 <span>Connect WhatsApp</span>";
+
+  button.onclick = connectWhatsApp;
+
+  nav.appendChild(button);
+
+});
+</script>
+
+<!-- META WHATSAPP COEXISTENCE END -->
+
+</body>
 </html>
